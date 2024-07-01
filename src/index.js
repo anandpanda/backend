@@ -4,7 +4,30 @@ dotenv.config({ path: "./.env" });
 
 import connectDB from "./db/index.js";
 connectDB()
+  .then(
+    app.on("error", (error) => {
+      console.error(error);
+      throw error;
+    }),
 
+    app.listen(process.env.PORT || 8080, () => {
+      console.log(
+        `%c Server is running on port ${process.env.PORT}`,
+        "color: #bada55",
+        "background: yellow"
+      );
+    })
+  )
+  .catch((err) => {
+    console.error("Database connection failed.", err);
+  });
+
+
+
+
+
+
+  
 /* // IIFE
 import express from "express";
 import mongoose from "mongoose";
