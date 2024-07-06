@@ -5,24 +5,26 @@ import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
 const registerUser = asyncHandler(async (req, res) => {
+  // console.log(req.body);
+
   // get user details from frontend
   const { username, fullName, email, password } = req.body;
 
   // validation
   const userNameRegex = new RegExp("^[a-zA-Z0-9_]+$");
   const passwordRegex = new RegExp(
-    "^(?=.*?[0-9])(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[^0-9A-Za-z]).{8,}$"
+    "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\\$%^&*])(?=.{8,})"
   );
 
-  if (
-    userNameRegex.test(username) === false ||
-    passwordRegex.test(password) === false
-  ) {
-    throw new ApiError(400, "Invalid username or password format");
+  if (!userNameRegex.test(username) || !passwordRegex.test(password)) {
+    throw new ApiError(
+      400,
+      "Username: letters, numbers, underscore | Password: atleast 1 uppercase, lowercase, number, special character each, min 8 characters"
+    );
   }
 
   // check if user already exists : username
-  const userExists = User.findOne({
+  const userExists = await User.findOne({
     $or: [{ username }, { email }],
   });
 
@@ -32,7 +34,9 @@ const registerUser = asyncHandler(async (req, res) => {
 
   // check for images (avatar)
   const avatarLocalPath = req.files?.avatar[0]?.path;
-  const coveImageLocalPath = req.files?.coverImage[0]?.path;
+  const temp = req.files?.coverImage;
+  const coveImageLocalPath =
+    Array.isArray(temp) && temp.length > 0 ? temp[0].path : null;
 
   if (!avatarLocalPath) {
     throw new ApiError(400, "Avatar is required");
@@ -48,13 +52,15 @@ const registerUser = asyncHandler(async (req, res) => {
 
   // create user object - create entry in db
   const user = await User.create({
-    username: username.toLowerCase(),
     fullName,
     email,
     password,
+    username: username.toLowerCase(),
     avatar: avatar.url,
     coverImage: coverImage?.url || "",
   });
+
+  // console.log(user);
 
   // remove pass and refresh token from response
   const createdUser = await User.findById(user._id).select(
