@@ -8,7 +8,7 @@ const asyncHandler = (reqHandler) => {
 //     try {
 //         await reqHandler(req, res, next);
 //     } catch (error) {
-//         res.status(error.code || 500).json({
+//         return res.status(error.code || 500).json({
 //             success: false,
 //             message: error.message || "An error occurred"
 //         })
