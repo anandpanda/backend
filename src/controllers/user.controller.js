@@ -2,7 +2,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../models/user.model.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { deleteFromCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js";
 import jwt from "jsonwebtoken";
 
 const generateAccessandRefreshToken = async (userId) => {
@@ -153,7 +153,9 @@ const loginUser = asyncHandler(async (req, res) => {
 const logoutUser = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(
     req.user._id,
-    { refreshToken: "" },
+    {
+      $unset: { refreshToken: 1 }, // deletes the refreshToken field
+    },
     { new: true, validateBeforeSave: false }
   );
 
@@ -286,13 +288,21 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     throw new ApiError(500, "Error uploading avatar");
   }
 
-  const updatedUser = await User.findByIdAndUpdate(
-    req.user._id,
-    {
-      $set: { avatar: avatar.url },
-    },
-    { new: true }
-  ).select("-password -refreshToken");
+  const updatedUser = await User.findById(req.user._id).select("-password -refreshToken");
+  const oldAvatar = updatedUser.avatar;
+  updatedUser.avatar = avatar.url;
+
+  await updatedUser.save({ validateBeforeSave: false });
+
+  await deleteFromCloudinary(oldAvatar);
+
+  // const updatedUser = await User.findByIdAndUpdate(
+  //   req.user._id,
+  //   {
+  //     $set: { avatar: avatar.url },
+  //   },
+  //   { new: true }
+  // ).select("-password -refreshToken");
 
   return res
     .status(200)
@@ -314,13 +324,21 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     throw new ApiError(500, "Error uploading Cover Image");
   }
 
-  const updatedUser = await User.findByIdAndUpdate(
-    req.user._id,
-    {
-      $set: { coverImage: coverImage.url },
-    },
-    { new: true }
-  ).select("-password -refreshToken");
+  const updatedUser = await User.findById(req.user._id).select("-password -refreshToken");
+  const oldCoverImage = updatedUser.coverImage;
+  updatedUser.coverImage = coverImage.url;
+
+  await updatedUser.save({ validateBeforeSave: false });
+
+  await deleteFromCloudinary(oldCoverImage);
+
+  // const updatedUser = await User.findByIdAndUpdate(
+  //   req.user._id,
+  //   {
+  //     $set: { coverImage: coverImage.url },
+  //   },
+  //   { new: true }
+  // ).select("-password -refreshToken");
 
   return res
     .status(200)
