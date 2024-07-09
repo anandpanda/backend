@@ -25,8 +25,6 @@ const generateAccessandRefreshToken = async (userId) => {
 };
 
 const registerUser = asyncHandler(async (req, res) => {
-  // console.log(req.body);
-
   // get user details from frontend
   const { username, fullName, email, password } = req.body;
 
@@ -79,8 +77,6 @@ const registerUser = asyncHandler(async (req, res) => {
     avatar: avatar.url,
     coverImage: coverImage?.url || "",
   });
-
-  // console.log(user);
 
   // remove pass and refresh token from response
   const createdUser = await User.findById(user._id).select(
@@ -226,7 +222,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
 const changePassword = asyncHandler(async (req, res) => {
   const { oldPassword, newPassword } = req.body;
-  const user = await req.user?._id;
+  const user = await User.findById(req.user?._id);
 
   const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
 
